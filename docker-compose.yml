@@ -1,0 +1,19 @@
+services:
+  aetherwall:
+    build: .
+    image: aetherwall:dev
+    command: ["aetherwall", "up", "--plane", "both", "--host", "0.0.0.0", "--data-port", "8443"]
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./policies:/app/policies:ro
+      - ./examples:/app/examples:ro
+    environment:
+      PYTHONUNBUFFERED: "1"
+
+  echo-upstream:
+    image: hashicorp/http-echo:1.0.0
+    command: ["-text={\"ok\":true,\"upstream\":\"echo\"}", "-listen=:8787"]
+    ports:
+      - "8787:8787"
+    profiles: ["full"]
