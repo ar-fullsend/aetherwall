@@ -67,7 +67,7 @@ func main() {
 	})
 
 	log.Printf("aetherwall go dataplane on %s control=%s", *listen, *control)
-	if err := http.ListenAndServe(*listen, mux); err != None {
+	if err := http.ListenAndServe(*listen, mux); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
