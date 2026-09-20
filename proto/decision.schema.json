@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aetherwall.io/schema/decision.json",
+  "title": "AetherwallDecision",
+  "type": "object",
+  "required": ["action", "score", "reasons"],
+  "properties": {
+    "action": { "enum": ["allow", "project", "deny"] },
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "reasons": { "type": "array", "items": { "type": "string" } },
+    "contract": { "type": ["string", "null"] },
+    "identity": { "type": ["string", "null"] }
+  }
+}

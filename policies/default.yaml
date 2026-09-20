@@ -1,0 +1,155 @@
+apiVersion: aetherwall.io/v1
+kind: FirewallPolicy
+metadata:
+  name: default
+  description: Deny-by-default SDF policy with AI Defense Plane contracts
+
+identity:
+  header: x-aetherwall-identity
+  allow:
+    - agent:docs-helper
+    - agent:code-review
+    - agent:soc-analyst
+    - user:operator
+  require_for_east_west: true
+
+network:
+  mode: software-defined
+  default_action: deny
+  dark_until_authenticated: true
+  sanctioned_model_endpoints:
+    - https://api.openai.com
+    - https://api.anthropic.com
+    - https://generativelanguage.googleapis.com
+    - http://127.0.0.1:8787
+  shadow_ai:
+    action: deny
+    log: true
+
+sdp:
+  single_packet_auth: simulated
+  resources:
+    - name: llm-gateway
+      hosts: ["127.0.0.1:8787", "api.openai.com", "api.anthropic.com"]
+      contracts: [summarize, classify, review-diff]
+    - name: mcp-repo
+      hosts: ["mcp.internal"]
+      contracts: [read-file, list-issues]
+    - name: mcp-pager
+      hosts: ["pager.internal"]
+      contracts: [create-ticket]
+
+contracts:
+  summarize:
+    description: Produce a short summary of supplied documents
+    inbound_schema: summarize_in
+    outbound_granularity: abstract
+    max_hops: 1
+    tools: []
+  classify:
+    description: Map text onto a closed label set
+    inbound_schema: classify_in
+    outbound_granularity: label
+    max_hops: 0
+    tools: []
+  review-diff:
+    description: Review a source diff for defects
+    inbound_schema: review_in
+    outbound_granularity: findings
+    max_hops: 1
+    tools: [read-file]
+  read-file:
+    description: Read a repository path
+    inbound_schema: path_in
+    outbound_granularity: file-slice
+    max_hops: 0
+    tools: []
+  list-issues:
+    description: List tracker issues
+    inbound_schema: query_in
+    outbound_granularity: issue-index
+    max_hops: 0
+    tools: []
+  create-ticket:
+    description: Open a ticket in the pager
+    inbound_schema: ticket_in
+    outbound_granularity: ticket-id
+    max_hops: 0
+    tools: []
+
+schemas:
+  summarize_in:
+    type: object
+    required: [text]
+    additionalProperties: false
+    properties:
+      text: { type: string, maxLength: 8000 }
+      max_sentences: { type: integer, minimum: 1, maximum: 5 }
+  classify_in:
+    type: object
+    required: [text, labels]
+    additionalProperties: false
+    properties:
+      text: { type: string, maxLength: 4000 }
+      labels:
+        type: array
+        items: { type: string }
+        maxItems: 32
+  review_in:
+    type: object
+    required: [diff]
+    additionalProperties: false
+    properties:
+      diff: { type: string, maxLength: 20000 }
+      path: { type: string, maxLength: 256 }
+  path_in:
+    type: object
+    required: [path]
+    additionalProperties: false
+    properties:
+      path: { type: string, maxLength: 256 }
+  query_in:
+    type: object
+    required: [query]
+    additionalProperties: false
+    properties:
+      query: { type: string, maxLength: 200 }
+  ticket_in:
+    type: object
+    required: [title, body]
+    additionalProperties: false
+    properties:
+      title: { type: string, maxLength: 120 }
+      body: { type: string, maxLength: 2000 }
+      severity: { type: string, enum: [low, medium, high] }
+
+ai_defense:
+  language_converter:
+    enabled: true
+    drop_freeform_when_schema_declared: true
+    strip_persuasive_framing: true
+  data_abstraction:
+    enabled: true
+    secret_patterns: default
+    max_exfil_bytes: 4096
+  quarantine:
+    privileged_never_sees_raw_untrusted: true
+    hop_budget_default: 1
+  scoring:
+    block_threshold: 0.72
+    challenge_threshold: 0.45
+  detectors:
+    prompt_injection: true
+    jailbreak: true
+    system_prompt_leak: true
+    tool_escalation: true
+    worm_replication: true
+    polymorphic_payload: true
+    secret_smuggle: true
+    shadow_endpoint: true
+
+actions:
+  on_block: deny
+  on_challenge: project_to_schema
+  on_allow: forward
+  audit: always

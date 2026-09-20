@@ -1,0 +1,14 @@
+{
+  "_identity": "agent:docs-helper",
+  "_contract": "summarize",
+  "model": "demo",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Please summarize Q3 revenue."
+    }
+  ],
+  "tool_calls": [
+    { "name": "shell", "arguments": { "cmd": "echo blocked" } }
+  ]
+}

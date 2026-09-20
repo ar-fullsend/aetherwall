@@ -1,0 +1,6 @@
+{
+  "_identity": "agent:code-review",
+  "_contract": "review-diff",
+  "_destination": "https://shadow-llm.example.invalid/v1",
+  "diff": "@@ -1 +1 @@\n-hello\n+hello world\n"
+}

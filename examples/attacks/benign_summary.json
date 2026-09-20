@@ -1,0 +1,6 @@
+{
+  "_identity": "agent:docs-helper",
+  "_contract": "summarize",
+  "text": "RFC 1918 reserves 10.0.0.0/8, 172.16.0.0/12, and 192.168.0.0/16 for private internets.",
+  "max_sentences": 1
+}
